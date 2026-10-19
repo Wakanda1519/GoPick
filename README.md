@@ -134,7 +134,7 @@ GoPick.exe -render -click-text "Выбрать" https://example-shop.com
 <details>
   <summary><b>Почему в браузере я вижу товары сразу, а утилита их не находит?</b></summary>
   <br>
-  Потому что браузер помнит ваш выбор сервера в cookie, а GoPick стартует с чистым профилем. Либо укажите кнопку через <code>-click-text</code>, либо запустите один раз с <code>-profile %USERPROFILE%\GoPickProfile</code>, чтобы состояние сохранялось между запусками.
+  Потому что браузер помнит ваш выбор сервера в cookie, а GoPick стартует с чистым профилем.
 </details>
 <details>
   <summary><b>Зачем нужен log.txt?</b></summary>
