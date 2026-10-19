@@ -52,7 +52,6 @@ go build -o GoPick.exe ./cmd/gopick
 
 ```
 GoPick.exe https://example.com
-GoPick.exe https://yrsproject.gamestores.app
 GoPick.exe -render -click-text "Выбрать" https://example-shop.com
 ```
 
@@ -83,7 +82,7 @@ example.com/
 
 ## Гайд: магазин на gamestores.app и кнопка «Выбрать»
 
-Большинство RUST/донат-магазинов крутится на движке **GameStores** — например `https://yrsproject.gamestores.app` или `https://rustcasta.ru`. Это React/Vite-одностраничник: самих товаров в HTML нет, всё рисуется скриптами.
+Большинство RUST/донат-магазинов крутится на движке **GameStores** — например `https://travelerust.ru` или `https://rustcasta.ru`. Это React/Vite-одностраничник: самих товаров в HTML нет, всё рисуется скриптами.
 
 **Что видно в браузере.** Открыв такой магазин, вы попадаете на выбор сервера: карточки серверов с кнопкой **«Выбрать»**. Пока сервер не выбран, товары не показываются — они подгружаются под конкретный сервер.
 
