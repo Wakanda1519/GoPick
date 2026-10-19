@@ -156,11 +156,6 @@ GoPick.exe -render -click-text "Выбрать" https://example-shop.com
   <br>
   Да. Для сайтов, где картинки есть в HTML, браузер не нужен вовсе, а витрины GameStores и так разбираются через JSON-API — <code>-no-render</code> запретит переход в режим рендера. Разбор HTML и API-режим автономны и не требуют ничего, кроме самого exe.
 </details>
-<details>
-  <summary><b>Как пересобрать иконку приложения?</b></summary>
-  <br>
-  Иконка рисуется кодом: <code>go run ./tools/genicon assets</code>, затем ресурс <code>go run github.com/akavel/rsrc@latest -ico assets/icon.ico -arch amd64 -o cmd/gopick/rsrc_windows_amd64.syso</code> и обычная сборка.
-</details>
 
 ## Лицензия
 
