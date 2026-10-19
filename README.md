@@ -90,7 +90,7 @@ example.com/
 
 1. Запустите обычную команду:
    ```
-   GoPick.exe https://yrsproject.gamestores.app
+   GoPick.exe https://example-shop.com
    ```
 2. В выводе будет:
    ```
@@ -119,7 +119,7 @@ GoPick.exe -render -click-text "Выбрать сервер" https://example-sho
 Тот же клик годится и для витрины GameStores, если её API по какой-то причине недоступен — тогда сервер выбирается вручную:
 
 ```
-GoPick.exe -render -click-text "Выбрать" https://yrsproject.gamestores.app
+GoPick.exe -render -click-text "Выбрать" https://example-shop.com
 ```
 
 А `-click "<css>"` попадает в элемент точно, по CSS-селектору, если текста кнопки недостаточно.
