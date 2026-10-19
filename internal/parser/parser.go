@@ -1,5 +1,3 @@
-// Package parser извлекает ссылки на изображения со страницы: сначала из
-// статического HTML, а при необходимости — после рендера в headless-браузере.
 package parser
 
 import (
@@ -13,25 +11,18 @@ import (
 	"golang.org/x/net/html/charset"
 )
 
-// userAgent identifies GoPick to the remote server.
 const userAgent = "GoPick/1.0"
 
-// FetchImages делает HTTP GET страницы и возвращает дедуплицированный список
-// абсолютных URL изображений из статического HTML.
 func FetchImages(pageURL string) ([]string, error) {
 	images, _, err := FetchImagesDetailed(pageURL)
 	return images, err
 }
 
-// FetchImagesWithClient — FetchImages с подменяемым HTTP-клиентом, что делает
-// парсер тестируемым без выхода в сеть.
 func FetchImagesWithClient(pageURL string, client *http.Client) ([]string, error) {
 	images, _, err := fetchImagesDetailedWithClient(pageURL, client)
 	return images, err
 }
 
-// FetchImagesDetailed читает HTML и за один запрос возвращает и изображения, и
-// отчёт о странице для лога.
 func FetchImagesDetailed(pageURL string) ([]string, PageReport, error) {
 	return fetchImagesDetailedWithClient(pageURL, defaultClient())
 }
@@ -60,8 +51,6 @@ func fetchImagesDetailedWithClient(pageURL string, client *http.Client) ([]strin
 		return nil, PageReport{}, fmt.Errorf("не удалось загрузить %q: неожиданный статус %s", pageURL, resp.Status)
 	}
 
-	// Страницы в windows-1251 и других кодировках приводим к UTF-8, иначе
-	// не-ASCII символы в ссылках разбираются некорректно.
 	body, err := charset.NewReader(resp.Body, resp.Header.Get("Content-Type"))
 	if err != nil {
 		body = resp.Body
@@ -130,19 +119,11 @@ func fetchImagesDetailedWithClient(pageURL string, client *http.Client) ([]strin
 		links = append(links, href)
 	})
 
-	// Витрины GameStores (React/Vite) помечают себя ссылками на свой CDN: по
-	// этому признаку страницу можно разобрать через JSON-API, не запуская
-	// браузер.
 	gameStores := doc.Find(`script[src*="gamestores.app"], link[href*="gamestores.app"]`).Length() > 0
 
-	// Текст собираем без содержимого <script>/<style>/<noscript>: goquery
-	// включает их текст в body, из-за чего в отчёт попадал код счётчиков и
-	// бутстрапа вместо текста страницы.
 	doc.Find("script, style, noscript, template").Remove()
 	text := strings.Join(strings.Fields(doc.Find("body").Text()), " ")
 
-	// Нет текста, но есть контейнер SPA — контент дорисован JavaScript, и
-	// статический HTML заведомо неполон.
 	spa := text == "" && doc.Find("#root, #app, #__next, [data-reactroot]").Length() > 0
 
 	if runes := []rune(text); len(runes) > 1200 {
@@ -165,8 +146,6 @@ func fetchImagesDetailedWithClient(pageURL string, client *http.Client) ([]strin
 	return images, report, nil
 }
 
-// collect превращает список найденных ссылок в дедуплицированный набор
-// абсолютных http(s) URL.
 func collect(base *url.URL, candidates []string) []string {
 	seen := make(map[string]struct{}, len(candidates))
 	out := make([]string, 0, len(candidates))
@@ -184,7 +163,6 @@ func collect(base *url.URL, candidates []string) []string {
 	return out
 }
 
-// resolve turns a possibly relative reference into an absolute http(s) URL.
 func resolve(base *url.URL, raw string) (string, bool) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" || strings.HasPrefix(raw, "data:") || strings.HasPrefix(raw, "javascript:") {

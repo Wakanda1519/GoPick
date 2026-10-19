@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-// PageReport — то, что утилита увидела на странице. Отчёт помогает понять,
-// почему нужных картинок нет и по какой кнопке имеет смысл кликнуть.
 type PageReport struct {
 	URL       string
 	Mode      string
@@ -19,16 +17,11 @@ type PageReport struct {
 	Images    []string
 	Generated time.Time
 
-	// SPA — контент страницы дорисован JavaScript: статический HTML почти
-	// пуст, и его нужно перечитывать после рендера.
 	SPA bool
-	// GameStores — страница собрана на витрине GameStores, у которой есть
-	// JSON-API: её выгоднее разобрать через /api/v1, не запуская браузер.
+
 	GameStores bool
 }
 
-// InspectPage собирает отчёт: сначала пробует отрисовать страницу в браузере,
-// а если браузера нет — читает обычный HTML.
 func InspectPage(pageURL string, opts RenderOptions) (PageReport, error) {
 	_, report, err := FetchImagesRenderedDetailed(pageURL, opts)
 	if err == nil {
@@ -42,13 +35,11 @@ func InspectPage(pageURL string, opts RenderOptions) (PageReport, error) {
 	return static, nil
 }
 
-// inspectStatic собирает отчёт из обычного HTML, когда браузер недоступен.
 func inspectStatic(pageURL string) (PageReport, error) {
 	_, report, err := fetchImagesDetailedWithClient(pageURL, defaultClient())
 	return report, err
 }
 
-// String формирует текст отчёта для сохранения в лог.
 func (r PageReport) String() string {
 	var b strings.Builder
 

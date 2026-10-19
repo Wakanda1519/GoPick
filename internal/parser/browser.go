@@ -9,16 +9,11 @@ import (
 	"runtime"
 )
 
-// BrowserAvailable проверяет, что браузер для режима рендера доступен, не
-// запуская его.
 func BrowserAvailable(explicit string) error {
 	_, err := findBrowser(explicit)
 	return err
 }
 
-// findBrowser возвращает путь к Chrome/Chromium/Edge для headless-рендера.
-// Явный путь имеет приоритет, затем переменные окружения, затем типовые места
-// установки и, наконец, поиск в PATH.
 func findBrowser(explicit string) (string, error) {
 	if explicit != "" {
 		if _, err := os.Stat(explicit); err != nil {
@@ -53,7 +48,6 @@ func findBrowser(explicit string) (string, error) {
 	return "", errors.New("не найден Chrome/Chromium/Edge: установите браузер или укажите путь через -browser")
 }
 
-// browserCandidates перечисляет типовые пути установки браузеров для текущей ОС.
 func browserCandidates() []string {
 	rel := []string{
 		filepath.Join("Google", "Chrome", "Application", "chrome.exe"),

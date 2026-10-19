@@ -11,7 +11,6 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-// renderedPage — ответ браузерного скрипта inspectScript.
 type renderedPage struct {
 	Title   string   `json:"title"`
 	Height  int      `json:"height"`
@@ -21,8 +20,6 @@ type renderedPage struct {
 	Links   []string `json:"links"`
 }
 
-// browserUserAgent представляется сайту как обычный браузер: в режиме рендера
-// страница должна отдавать тот же контент, что и живому пользователю.
 const browserUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
 const (
@@ -30,20 +27,16 @@ const (
 	defaultRenderWait    = 3 * time.Second
 )
 
-// RenderOptions настраивает рендер страницы в headless-браузере.
 type RenderOptions struct {
-	BrowserPath string        // путь к Chrome/Chromium/Edge; пусто — автопоиск
-	Timeout     time.Duration // общий таймаут рендера; 0 — значение по умолчанию
-	Wait        time.Duration // пауза после загрузки, чтобы SPA успел запросить данные
-	Click       []string      // CSS-селекторы, по которым нужно кликнуть перед сбором
-	ClickText   string        // текст кнопки/ссылки для клика (выбор сервера, открытие каталога)
-	ProfileDir  string        // каталог профиля браузера, чтобы сохранять cookies и авторизацию
-	Scroll      bool          // прокручивать страницу, чтобы догрузились ленивые картинки
+	BrowserPath string
+	Timeout     time.Duration
+	Wait        time.Duration
+	Click       []string
+	ClickText   string
+	ProfileDir  string
+	Scroll      bool
 }
 
-// imageCollectorJS — функция браузера, собирающая ссылки на изображения уже из
-// отрисованного DOM: обычные <img>, srcset/data-srcset, <picture><source>,
-// poster видео, фоновые картинки из CSS и og:image.
 const imageCollectorJS = `function gopickCollectImages() {
   var out = [];
   var push = function (v) { if (v) { out.push(String(v).trim()); } };
@@ -89,8 +82,6 @@ const imageCollectorJS = `function gopickCollectImages() {
   return out;
 }`
 
-// buttonCollectorJS — функция браузера, собирающая тексты видимых кликабельных
-// элементов, чтобы подсказать, по чему кликнуть.
 const buttonCollectorJS = `function gopickCollectButtons() {
   var out = [];
   var seen = {};
@@ -108,8 +99,6 @@ const buttonCollectorJS = `function gopickCollectButtons() {
   return out;
 }`
 
-// openPage поднимает headless-браузер, открывает страницу и вызывает fn уже с
-// готовым DOM. Это общая часть сбора картинок и подсказок по кликам.
 func openPage(pageURL string, opts RenderOptions, fn func(ctx context.Context) error) error {
 	execPath, err := findBrowser(opts.BrowserPath)
 	if err != nil {
@@ -158,16 +147,11 @@ func openPage(pageURL string, opts RenderOptions, fn func(ctx context.Context) e
 	return fn(ctx)
 }
 
-// FetchImagesRendered открывает страницу в headless-браузере, дожидается
-// выполнения JavaScript и собирает ссылки на изображения из готового DOM.
 func FetchImagesRendered(pageURL string, opts RenderOptions) ([]string, error) {
 	images, _, err := FetchImagesRenderedDetailed(pageURL, opts)
 	return images, err
 }
 
-// FetchImagesRenderedDetailed делает то же, что FetchImagesRendered, но за один
-// запуск браузера отдаёт ещё и отчёт о странице: заголовок, текст, кнопки,
-// ссылки и высоту. Так лог не требует повторного рендера.
 func FetchImagesRenderedDetailed(pageURL string, opts RenderOptions) ([]string, PageReport, error) {
 	base, err := url.Parse(pageURL)
 	if err != nil {
@@ -176,8 +160,7 @@ func FetchImagesRenderedDetailed(pageURL string, opts RenderOptions) ([]string, 
 
 	var page renderedPage
 	err = openPage(pageURL, opts, func(ctx context.Context) error {
-		// Клики нужны сайтам, которые показывают товары только после выбора
-		// сервера или перехода по каталогу.
+
 		for _, selector := range opts.Click {
 			ok, err := clickSelector(ctx, selector)
 			if err != nil {
@@ -232,9 +215,6 @@ func FetchImagesRenderedDetailed(pageURL string, opts RenderOptions) ([]string, 
 	}, nil
 }
 
-// ClickCandidates возвращает тексты видимых кнопок и ссылок страницы. Нужны,
-// чтобы подсказать пользователю, по чему кликнуть флагом -click-text, когда
-// картинок на странице нет.
 func ClickCandidates(pageURL string, opts RenderOptions) ([]string, error) {
 	opts.Click = nil
 	opts.ClickText = ""
@@ -255,14 +235,11 @@ func ClickCandidates(pageURL string, opts RenderOptions) ([]string, error) {
 	return texts, nil
 }
 
-// clickCandidatesScript возвращает тексты видимых кликабельных элементов.
 const clickCandidatesScript = `(function () {
   ` + buttonCollectorJS + `
   return gopickCollectButtons();
 })()`
 
-// inspectScript возвращает JSON с тем, что утилита видит на отрисованной
-// странице: заголовок, высота, текст, кнопки, изображения и ссылки.
 const inspectScript = `(function () {
   ` + imageCollectorJS + `
   ` + buttonCollectorJS + `
@@ -285,7 +262,6 @@ const inspectScript = `(function () {
   });
 })()`
 
-// clickSelector кликает по первому элементу, найденному CSS-селектором.
 func clickSelector(ctx context.Context, selector string) (bool, error) {
 	return chromedp.Run(ctx, chromedp.Evaluate[bool](`(function (sel) {
   var el = document.querySelector(sel);
@@ -296,8 +272,6 @@ func clickSelector(ctx context.Context, selector string) (bool, error) {
 })(`+strconv.Quote(selector)+`)`))
 }
 
-// clickText кликает по самому вложенному элементу, текст которого содержит
-// искомую строку. Так выбираются кнопки вида «Выбрать» без знания разметки.
 func clickText(ctx context.Context, text string) (bool, error) {
 	return chromedp.Run(ctx, chromedp.Evaluate[bool](`(function (needle) {
   var want = needle.trim().toLowerCase();
@@ -319,8 +293,6 @@ func clickText(ctx context.Context, text string) (bool, error) {
 })(`+strconv.Quote(text)+`)`))
 }
 
-// autoScroll прокручивает страницу до низа, чтобы сработала ленивая загрузка
-// изображений, и ждёт после каждого шага.
 func autoScroll(ctx context.Context) error {
 	const steps = 30
 	for i := 0; i < steps; i++ {

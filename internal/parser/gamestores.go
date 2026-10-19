@@ -11,13 +11,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// gameStoresAPIPath — префикс JSON-API витрин GameStores. Сама витрина
-// (cdn.gamestores.app) — это React/Vite-SPA, но все её данные отдаёт обычный
-// JSON по этому префиксу, поэтому магазин разбирается без браузера.
 const gameStoresAPIPath = "/api/v1"
 
-// gsInfoResponse описывает ответ /api/v1/info: название магазина, дизайн и
-// серверы.
 type gsInfoResponse struct {
 	Result string `json:"result"`
 	Data   struct {
@@ -35,7 +30,6 @@ type gsInfoResponse struct {
 	} `json:"data"`
 }
 
-// gsProductsResponse описывает ответ /api/v1/products.list: категории и товары.
 type gsProductsResponse struct {
 	Result string `json:"result"`
 	Data   struct {
@@ -50,10 +44,6 @@ type gsProductsResponse struct {
 	} `json:"data"`
 }
 
-// FetchGameStoresImages собирает картинки витрины GameStores через её JSON-API
-// вместо отрисовки SPA. Второй результат сообщает, что страница действительно
-// оказалась витриной GameStores: если нет, возвращать отчёт не имеет смысла и
-// вызывающий код должен перейти к обычному рендеру.
 func FetchGameStoresImages(pageURL string) ([]string, PageReport, bool, error) {
 	base, err := url.Parse(pageURL)
 	if err != nil {
@@ -108,7 +98,6 @@ func FetchGameStoresImages(pageURL string) ([]string, PageReport, bool, error) {
 	}, true, nil
 }
 
-// gameStoresURL собирает абсолютный адрес эндпоинта API на хосте витрины.
 func gameStoresURL(base *url.URL, path string) string {
 	u := *base
 	u.Path = gameStoresAPIPath + path
@@ -117,7 +106,6 @@ func gameStoresURL(base *url.URL, path string) string {
 	return u.String()
 }
 
-// getJSON делает GET и разбирает ответ как JSON.
 func getJSON(client *http.Client, pageURL string, dst any) error {
 	req, err := http.NewRequest(http.MethodGet, pageURL, nil)
 	if err != nil {
@@ -139,8 +127,6 @@ func getJSON(client *http.Client, pageURL string, dst any) error {
 	return json.NewDecoder(resp.Body).Decode(dst)
 }
 
-// imagesInHTML вытаскивает ссылки из <img> внутри HTML-описания товара, где
-// витрины часто прячут картинки помимо основного поля img.
 func imagesInHTML(fragment string) []string {
 	if !strings.Contains(fragment, "<img") {
 		return nil

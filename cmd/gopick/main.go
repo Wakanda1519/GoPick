@@ -1,9 +1,3 @@
-// Command GoPick разбирает веб-страницу, собирает ссылки на изображения и
-// конкурентно скачивает их в дерево каталогов, разложенное по форматам.
-//
-// Использование:
-//
-//	GoPick [флаги] <url>
 package main
 
 import (
@@ -24,7 +18,6 @@ import (
 	"github.com/Wakanda1519/GoPick/internal/ui"
 )
 
-// version отображается в баннере главного экрана.
 const version = "1.0"
 
 const banner = `
@@ -52,9 +45,6 @@ func main() {
 		fmt.Print(banner)
 	}
 
-	// Запуск без аргументов (например, двойным кликом в проводнике) открывает
-	// главный экран: можно скачивать сколько угодно сайтов подряд, окно
-	// закрывается только по пустой строке.
 	if interactive {
 		runInteractive()
 		return
@@ -66,26 +56,19 @@ func main() {
 	}
 }
 
-// menuItem описывает пункт меню главного экрана.
 type menuItem struct {
 	flag  string
-	title string // понятное название пункта
-	hint  string // что произойдёт, если включить
-	value string // подпись для запроса значения; пусто — флаг без значения
+	title string
+	hint  string
+	value string
 }
 
-// menu перечисляет пункты главного экрана. Всё остальное утилита делает сама:
-// читает HTML, при пустом результате включает браузер, прокручивает страницу и
-// качает в 8 потоков. Флаги -render, -no-render, -no-scroll, -profile и -w
-// остаются доступны из командной строки.
 var menu = []menuItem{
 	{"-click-text", "Кликнуть по кнопке с текстом", "например, выбрать сервер или открыть каталог", "текст кнопки"},
 	{"-click", "Кликнуть по элементу (CSS)", "точное попадание в нужный элемент", "CSS-селектор"},
 	{"-list", "Только показать ссылки", "ничего не скачивать", ""},
 }
 
-// runInteractive — главный экран: сначала настройка, затем можно отправлять
-// сколько угодно адресов подряд. Окно закрывается только по пустой строке.
 func runInteractive() {
 	flags := chooseFlags(nil)
 
@@ -106,8 +89,6 @@ func runInteractive() {
 			continue
 		}
 
-		// Строка с флагами воспринимается как готовая команда, одиночное
-		// значение — как URL, к которому применяются выбранные флаги.
 		var args []string
 		if strings.HasPrefix(line, "-") || len(splitArgs(line)) > 1 {
 			args = splitArgs(line)
@@ -121,7 +102,6 @@ func runInteractive() {
 	}
 }
 
-// chooseFlags показывает меню настройки и возвращает выбранный набор аргументов.
 func chooseFlags(current []string) []string {
 	enabled := splitFlags(current)
 
@@ -189,7 +169,6 @@ func chooseFlags(current []string) []string {
 	return chosen
 }
 
-// splitFlags разбирает аргументы в соответствие «флаг → значение».
 func splitFlags(args []string) map[string]string {
 	out := make(map[string]string, len(args))
 	for i := 0; i < len(args); i++ {
@@ -204,7 +183,6 @@ func splitFlags(args []string) map[string]string {
 	return out
 }
 
-// describeFlags пересказывает набор флагов человеческим языком.
 func describeFlags(args []string) string {
 	if len(args) == 0 {
 		return "настройки по умолчанию (HTML → авто-рендер, прокрутка, 8 потоков)"
@@ -234,7 +212,6 @@ func describeFlags(args []string) string {
 	return strings.Join(parts, "; ")
 }
 
-// formatArgs собирает строку аргументов, заключая значения с пробелами в кавычки.
 func formatArgs(args []string) string {
 	if len(args) == 0 {
 		return "(нет)"
@@ -250,18 +227,14 @@ func formatArgs(args []string) string {
 	return strings.Join(parts, " ")
 }
 
-// stdin общий для всех чтений, чтобы буферизованный ввод не терялся.
 var stdin = bufio.NewReader(os.Stdin)
 
-// readLine печатает приглашение и читает строку до перевода строки.
 func readLine(prompt string) string {
 	fmt.Print(prompt)
 	line, _ := stdin.ReadString('\n')
 	return strings.TrimSpace(line)
 }
 
-// splitArgs разбирает строку главного экрана на аргументы, поддерживая кавычки
-// для значений с пробелами.
 func splitArgs(line string) []string {
 	var args []string
 	var current strings.Builder
@@ -288,7 +261,6 @@ func splitArgs(line string) []string {
 	return args
 }
 
-// isTerminal сообщает, связан ли файл с консолью (а не с каналом или файлом).
 func isTerminal(f *os.File) bool {
 	fi, err := f.Stat()
 	if err != nil {
@@ -359,8 +331,6 @@ func run(args []string) error {
 	}
 	ui.OK("режим: %s", mode)
 
-	// Лог пишется всегда и до проверки на пустой результат: именно в этом случае
-	// он и нужен, чтобы понять, по какой кнопке кликнуть.
 	report.Mode = mode
 	writeLog(report)
 
@@ -379,8 +349,7 @@ func run(args []string) error {
 	}
 
 	ui.Step(2, totalSteps, "Подготовка каталога")
-	// Каталог создаётся только когда есть что скачивать, чтобы не оставлять
-	// пустых папок.
+
 	root, err := storage.New(rootDir(pageURL))
 	if err != nil {
 		return err
@@ -409,14 +378,13 @@ func run(args []string) error {
 	return nil
 }
 
-// writeLog дописывает отчёт о странице в log.txt рядом с исполняемым файлом.
 func writeLog(report parser.PageReport) {
 	entry := fmt.Sprintf("\n===== %s =====\n%s\n",
 		report.Generated.Format("2006-01-02 15:04:05"), report.String())
 
 	path, err := appendLog(logPath(), entry)
 	if err != nil {
-		// Каталог рядом с exe может быть только для чтения — пишем в текущий.
+
 		path, err = appendLog("log.txt", entry)
 		if err != nil {
 			ui.Warn("не удалось записать лог: %v", err)
@@ -426,8 +394,6 @@ func writeLog(report parser.PageReport) {
 	ui.OK("лог: %s", path)
 }
 
-// appendLog дописывает текст в файл и возвращает использованный путь. Новый
-// файл начинается с BOM, иначе блокнот и PowerShell читают кириллицу как мусор.
 func appendLog(path, text string) (string, error) {
 	needBOM := true
 	if info, err := os.Stat(path); err == nil && info.Size() > 0 {
@@ -454,7 +420,6 @@ func appendLog(path, text string) (string, error) {
 	return path, nil
 }
 
-// logPath возвращает путь к log.txt рядом с исполняемым файлом.
 func logPath() string {
 	exe, err := os.Executable()
 	if err != nil {
@@ -463,8 +428,6 @@ func logPath() string {
 	return filepath.Join(filepath.Dir(exe), "log.txt")
 }
 
-// scan выбирает способ сбора картинок и возвращает их вместе с отчётом о
-// странице и названием режима.
 func scan(pageURL string, forceRender, noRender bool, opts parser.RenderOptions) ([]string, parser.PageReport, string, error) {
 	if forceRender {
 		images, report, err := parser.FetchImagesRenderedDetailed(pageURL, opts)
@@ -476,7 +439,6 @@ func scan(pageURL string, forceRender, noRender bool, opts parser.RenderOptions)
 		return nil, parser.PageReport{}, "HTML", err
 	}
 
-	// Готовый статический результат: контент в HTML, а не дорисован скриптами.
 	if len(images) > 0 && !report.SPA {
 		return images, report, "HTML", nil
 	}
@@ -484,17 +446,12 @@ func scan(pageURL string, forceRender, noRender bool, opts parser.RenderOptions)
 		return images, report, "HTML", nil
 	}
 
-	// У витрин GameStores контент рисует React/Vite, но у них есть JSON-API:
-	// он отдаёт товары и картинки без запуска браузера. Пробуем его, когда
-	// страница опознана как витрина или в HTML вообще ничего не нашлось.
 	if report.GameStores || len(images) == 0 {
 		if apiImages, apiReport, ok, apiErr := parser.FetchGameStoresImages(pageURL); ok && apiErr == nil && len(apiImages) > 0 {
 			return apiImages, apiReport, "API (GameStores)", nil
 		}
 	}
 
-	// Пустой HTML почти всегда означает сайт на JavaScript: повторяем попытку
-	// уже после выполнения скриптов.
 	if err := parser.BrowserAvailable(opts.BrowserPath); err != nil {
 		ui.Info("готовых изображений нет, а браузер для рендера не найден")
 		ui.Info("%s", "установите Chrome/Chromium/Edge или укажите путь: GoPick -browser <путь> "+pageURL)
@@ -506,8 +463,6 @@ func scan(pageURL string, forceRender, noRender bool, opts parser.RenderOptions)
 	return images, report, "HTML + рендер (headless-браузер)", err
 }
 
-// hintClickCandidates подсказывает, по каким кнопкам можно кликнуть, если на
-// отрендеренной странице картинок не оказалось.
 func hintClickCandidates(pageURL string, opts parser.RenderOptions) {
 	if err := parser.BrowserAvailable(opts.BrowserPath); err != nil {
 		return
@@ -523,7 +478,6 @@ func hintClickCandidates(pageURL string, opts parser.RenderOptions) {
 	ui.Info("%s", "попробуйте: GoPick -render -click-text \"<текст кнопки>\" "+pageURL)
 }
 
-// splitList разбирает список значений, переданный одной строкой через запятую.
 func splitList(raw string) []string {
 	var out []string
 	for _, part := range strings.Split(raw, ",") {
@@ -534,7 +488,6 @@ func splitList(raw string) []string {
 	return out
 }
 
-// normalizeURL проверяет аргумент CLI и возвращает канонический URL.
 func normalizeURL(raw string) (string, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -560,15 +513,12 @@ func normalizeURL(raw string) (string, error) {
 	return u.String(), nil
 }
 
-// rootDir возвращает имя каталога для скачанных файлов — домен сайта без
-// схемы, например https://example.com/page -> example.com.
 func rootDir(pageURL string) string {
 	u, err := url.Parse(pageURL)
 	if err != nil || u.Host == "" {
 		return "site"
 	}
-	// Двоеточие в имени файла недопустимо в Windows, поэтому порт отделяется
-	// подчёркиванием: example.com:8080 -> example.com_8080.
+
 	host := strings.NewReplacer(":", "_", "/", "_", "\\", "_", " ", "_").Replace(u.Host)
 	host = strings.Trim(host, ".")
 	if host == "" {

@@ -1,6 +1,3 @@
-// Package storage handles the filesystem layout of a GoPick run: it creates
-// the root project directory, resolves the target sub-directory for each
-// image extension and persists downloaded payloads on disk.
 package storage
 
 import (
@@ -17,15 +14,11 @@ import (
 )
 
 const (
-	// UnknownDir receives every image whose extension cannot be derived from
-	// its URL.
 	UnknownDir = "unknown"
-	// fallbackName is used when the URL path does not expose a usable file
-	// name (e.g. "https://example.com/").
+
 	fallbackName = "image"
 )
 
-// Storage is safe for concurrent use by multiple goroutines.
 type Storage struct {
 	root string
 
@@ -33,8 +26,6 @@ type Storage struct {
 	used map[string]struct{}
 }
 
-// New creates the root directory (if needed) and returns a Storage rooted at
-// it. The root is created lazily with MkdirAll so nested relative paths work.
 func New(root string) (*Storage, error) {
 	if root == "" {
 		return nil, fmt.Errorf("storage: пустой корневой каталог")
@@ -45,11 +36,8 @@ func New(root string) (*Storage, error) {
 	return &Storage{root: root, used: make(map[string]struct{})}, nil
 }
 
-// Root returns the absolute or relative root directory of the storage.
 func (s *Storage) Root() string { return s.root }
 
-// Save streams the body of r into the sub-directory matching the image
-// extension taken from rawURL. It returns the path of the written file.
 func (s *Storage) Save(rawURL string, r io.Reader) (string, error) {
 	ext := Extension(rawURL)
 	dir := filepath.Join(s.root, ext)
@@ -77,10 +65,6 @@ func (s *Storage) Save(rawURL string, r io.Reader) (string, error) {
 	return dst, nil
 }
 
-// reserve возвращает имя файла, уникальное внутри dir. При совпадении базовых
-// имён (типичный случай — чужие CDN вида /image.png) имя получает префикс хоста,
-// а если и это не помогло — короткий хеш URL, чтобы параллельные загрузки не
-// затирали друг друга.
 func (s *Storage) reserve(dir, name, rawURL string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -117,7 +101,6 @@ func (s *Storage) reserve(dir, name, rawURL string) string {
 	}
 }
 
-// claim помечает имя как занятое и сообщает, было ли оно свободно.
 func (s *Storage) claim(dir, name string) bool {
 	key := filepath.Join(dir, name)
 	if _, exists := s.used[key]; exists {
@@ -127,7 +110,6 @@ func (s *Storage) claim(dir, name string) bool {
 	return true
 }
 
-// hostPrefix превращает хост URL в пригодный для имени файла префикс.
 func hostPrefix(rawURL string) string {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -140,8 +122,6 @@ func hostPrefix(rawURL string) string {
 	return sanitize(host)
 }
 
-// Extension extracts a lower-cased image extension from rawURL, or UnknownDir
-// when the URL does not carry a usable one.
 func Extension(rawURL string) string {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -160,7 +140,6 @@ func Extension(rawURL string) string {
 	return ext
 }
 
-// fileName builds a filesystem-safe name for rawURL inside the ext directory.
 func fileName(rawURL, ext string) string {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -184,8 +163,6 @@ func fileName(rawURL, ext string) string {
 	return base
 }
 
-// sanitize strips characters that are not safe in a file name on Windows and
-// POSIX alike, and collapses the reserved names "." and "..".
 func sanitize(name string) string {
 	name = strings.Map(func(r rune) rune {
 		switch r {

@@ -14,16 +14,12 @@ var (
 	procSetConsoleMode     = kernel32.NewProc("SetConsoleMode")
 )
 
-// enableUTF8Console переключает кодовую страницу консоли Windows на UTF-8,
-// иначе рамки баннера и русский текст отображаются как мусор.
 func enableUTF8Console() {
 	const utf8CodePage = 65001
 	procSetConsoleOutputCP.Call(uintptr(utf8CodePage))
 	procSetConsoleCP.Call(uintptr(utf8CodePage))
 }
 
-// enableANSIConsole включает обработку ANSI-последовательностей, чтобы цвета
-// этапов и прогресса работали в cmd и PowerShell.
 func enableANSIConsole() {
 	const enableVirtualTerminalProcessing = 0x0004
 

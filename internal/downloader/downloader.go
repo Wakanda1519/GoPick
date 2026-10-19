@@ -1,5 +1,3 @@
-// Package downloader implements the concurrent worker pool used to fetch image
-// payloads and hand them to the storage layer.
 package downloader
 
 import (
@@ -12,21 +10,16 @@ import (
 	"github.com/Wakanda1519/GoPick/internal/storage"
 )
 
-// DefaultWorkers bounds the number of concurrent downloads to avoid hammering
-// the remote host.
 const DefaultWorkers = 8
 
-// userAgent identifies GoPick to the remote server.
 const userAgent = "GoPick/1.0"
 
-// Result reports the outcome of a single download attempt.
 type Result struct {
 	URL  string
 	Path string
 	Err  error
 }
 
-// Summary aggregates the outcome of a whole run.
 type Summary struct {
 	Total     int
 	Succeeded int
@@ -34,7 +27,6 @@ type Summary struct {
 	Results   []Result
 }
 
-// Progress — снимок состояния загрузки после очередного файла.
 type Progress struct {
 	Done      int
 	Total     int
@@ -43,20 +35,14 @@ type Progress struct {
 	Last      Result
 }
 
-// Download fetches every URL using at most workers concurrent goroutines and
-// stores the successful responses. A failure never aborts the run: it is
-// recorded in the summary and the remaining URLs keep downloading.
 func Download(urls []string, store *storage.Storage, workers int) Summary {
 	return DownloadContext(context.Background(), urls, store, workers)
 }
 
-// DownloadWithProgress — Download с обратным вызовом после каждого файла, чтобы
-// главный экран мог рисовать прогресс.
 func DownloadWithProgress(urls []string, store *storage.Storage, workers int, onProgress func(Progress)) Summary {
 	return download(context.Background(), urls, store, workers, onProgress)
 }
 
-// DownloadContext is Download with a cancellable context.
 func DownloadContext(ctx context.Context, urls []string, store *storage.Storage, workers int) Summary {
 	return download(ctx, urls, store, workers, nil)
 }
@@ -122,7 +108,6 @@ func download(ctx context.Context, urls []string, store *storage.Storage, worker
 	return summary
 }
 
-// downloadOne performs a single GET and persists the body on success.
 func downloadOne(ctx context.Context, client *http.Client, store *storage.Storage, rawURL string) Result {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
