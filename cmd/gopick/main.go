@@ -475,19 +475,33 @@ func scan(pageURL string, forceRender, noRender bool, opts parser.RenderOptions)
 	if err != nil {
 		return nil, parser.PageReport{}, "HTML", err
 	}
-	if len(images) > 0 || noRender {
+
+	// Готовый статический результат: контент в HTML, а не дорисован скриптами.
+	if len(images) > 0 && !report.SPA {
 		return images, report, "HTML", nil
+	}
+	if noRender {
+		return images, report, "HTML", nil
+	}
+
+	// У витрин GameStores контент рисует React/Vite, но у них есть JSON-API:
+	// он отдаёт товары и картинки без запуска браузера. Пробуем его, когда
+	// страница опознана как витрина или в HTML вообще ничего не нашлось.
+	if report.GameStores || len(images) == 0 {
+		if apiImages, apiReport, ok, apiErr := parser.FetchGameStoresImages(pageURL); ok && apiErr == nil && len(apiImages) > 0 {
+			return apiImages, apiReport, "API (GameStores)", nil
+		}
 	}
 
 	// Пустой HTML почти всегда означает сайт на JavaScript: повторяем попытку
 	// уже после выполнения скриптов.
 	if err := parser.BrowserAvailable(opts.BrowserPath); err != nil {
-		ui.Info("в HTML изображений нет, а браузер для рендера не найден")
+		ui.Info("готовых изображений нет, а браузер для рендера не найден")
 		ui.Info("%s", "установите Chrome/Chromium/Edge или укажите путь: GoPick -browser <путь> "+pageURL)
-		return nil, report, "HTML", nil
+		return images, report, "HTML", nil
 	}
 
-	ui.Info("в HTML изображений нет — включаю рендер (JS/SPA)")
+	ui.Info("готовых изображений нет — включаю рендер (JS/SPA)")
 	images, report, err = parser.FetchImagesRenderedDetailed(pageURL, opts)
 	return images, report, "HTML + рендер (headless-браузер)", err
 }

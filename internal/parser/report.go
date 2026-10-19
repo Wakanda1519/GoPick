@@ -18,6 +18,13 @@ type PageReport struct {
 	Links     []string
 	Images    []string
 	Generated time.Time
+
+	// SPA — контент страницы дорисован JavaScript: статический HTML почти
+	// пуст, и его нужно перечитывать после рендера.
+	SPA bool
+	// GameStores — страница собрана на витрине GameStores, у которой есть
+	// JSON-API: её выгоднее разобрать через /api/v1, не запуская браузер.
+	GameStores bool
 }
 
 // InspectPage собирает отчёт: сначала пробует отрисовать страницу в браузере,
@@ -52,6 +59,12 @@ func (r PageReport) String() string {
 	}
 	if r.Height > 0 {
 		fmt.Fprintf(&b, "Высота:    %d px\n", r.Height)
+	}
+	if r.SPA {
+		b.WriteString("Признак:   страница рисуется JavaScript (SPA)\n")
+	}
+	if r.GameStores {
+		b.WriteString("Признак:   витрина GameStores (есть JSON-API /api/v1)\n")
 	}
 	fmt.Fprintf(&b, "Найдено изображений: %d\n", len(r.Images))
 	for _, img := range r.Images {

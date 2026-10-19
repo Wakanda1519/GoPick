@@ -130,21 +130,37 @@ func fetchImagesDetailedWithClient(pageURL string, client *http.Client) ([]strin
 		links = append(links, href)
 	})
 
+	// Витрины GameStores (React/Vite) помечают себя ссылками на свой CDN: по
+	// этому признаку страницу можно разобрать через JSON-API, не запуская
+	// браузер.
+	gameStores := doc.Find(`script[src*="gamestores.app"], link[href*="gamestores.app"]`).Length() > 0
+
+	// Текст собираем без содержимого <script>/<style>/<noscript>: goquery
+	// включает их текст в body, из-за чего в отчёт попадал код счётчиков и
+	// бутстрапа вместо текста страницы.
+	doc.Find("script, style, noscript, template").Remove()
 	text := strings.Join(strings.Fields(doc.Find("body").Text()), " ")
+
+	// Нет текста, но есть контейнер SPA — контент дорисован JavaScript, и
+	// статический HTML заведомо неполон.
+	spa := text == "" && doc.Find("#root, #app, #__next, [data-reactroot]").Length() > 0
+
 	if runes := []rune(text); len(runes) > 1200 {
 		text = string(runes[:1200])
 	}
 
 	images := collect(base, raw)
 	report := PageReport{
-		URL:       pageURL,
-		Mode:      "HTML",
-		Title:     strings.TrimSpace(doc.Find("title").Text()),
-		Text:      text,
-		Buttons:   buttons,
-		Links:     links,
-		Images:    images,
-		Generated: time.Now(),
+		URL:        pageURL,
+		Mode:       "HTML",
+		Title:      strings.TrimSpace(doc.Find("title").Text()),
+		Text:       text,
+		Buttons:    buttons,
+		Links:      links,
+		Images:     images,
+		SPA:        spa,
+		GameStores: gameStores,
+		Generated:  time.Now(),
 	}
 	return images, report, nil
 }
